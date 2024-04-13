@@ -180,7 +180,7 @@ class KRS{
           // Tambahkan data IPK ke dalam array hasilIPK
           hasilIPK.push({ nama: nama, ipk: ipk });
   
-          return { hasilIPK };
+          return hasilIPK ;
       } catch (error) {
           console.error('Gagal menghitung IPK:', error.message);
           throw error;
