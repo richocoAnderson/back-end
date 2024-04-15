@@ -65,6 +65,7 @@ class KRS{
             for (const mahasiswaDoc of mahasiswaSnapshot.docs) {
                 const nim = mahasiswaDoc.data().nim;
                 const nama = mahasiswaDoc.data().nama;
+                const jurusan= mahasiswaDoc.data().jurusan;
     
                 let totalNilai = 0;
                 let totalSKS = 0;
@@ -103,10 +104,10 @@ class KRS{
                 });
     
                 // Hitung IPK untuk mahasiswa
-                const ipk = totalSKS > 0 ? totalNilai / totalSKS : 0;
+                const ipk = totalSKS > 0 ? (totalNilai / totalSKS).toFixed(2) : 0;
     
                 // Tambahkan data IPK ke dalam array hasilIPK
-                hasilIPK.push({ nama: nama, ipk: ipk });
+                hasilIPK.push({ nim:nim, nama: nama, jurusan: jurusan, ipk: ipk });
     
             }
     
@@ -133,6 +134,8 @@ class KRS{
           // Ambil data mahasiswa dari snapshot
           const mahasiswaDoc = mahasiswaSnapshot.docs[0];
           const nama = mahasiswaDoc.data().nama;
+          const nimNya= mahasiswaDoc.data().nim;
+          const jurusan= mahasiswaDoc.data().jurusan;
   
           let totalNilai = 0;
           let totalSKS = 0;
@@ -178,7 +181,7 @@ class KRS{
           const ipk = totalSKS > 0 ? totalNilai / totalSKS : 0;
   
           // Tambahkan data IPK ke dalam array hasilIPK
-          hasilIPK.push({ nama: nama, ipk: ipk });
+          hasilIPK.push({ nim:nimNya, nama: nama, jursan: jurusan, ipk: ipk });
   
           return hasilIPK ;
       } catch (error) {

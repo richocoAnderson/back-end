@@ -26,6 +26,22 @@ class MK{
           return { error: 'Gagal menambahkan mata kuliah', errorMessage: error };
         }
       }
+
+      static async displayAllMatakuliah() {
+        try {
+          const matCollection = collection(firestore, MatkulCollection);
+          const querySnapshot = await getDocs(matCollection);
+          const matakuliahList = [];
+          
+          querySnapshot.forEach(doc => {
+            matakuliahList.push(doc.data());
+          });
+          return matakuliahList;
+        } catch (error) {
+          console.error('Gagal menampilkan matakuliah:', error.message);
+          return { error: 'Gagal menampilkan matakuliah', errorMessage: error };
+        }
+      }
 }
 
 module.exports = MK;

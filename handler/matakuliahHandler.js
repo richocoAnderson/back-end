@@ -10,6 +10,18 @@ async function addMatakuliah(req, res) {
   }
 }
 
+async function DisplayAllMatakuliah(req, res) {
+  try {
+    const matakuliahList = await MK.displayAllMatakuliah();
+    res.status(200).json(matakuliahList);
+  } catch (error) {
+    res.status(500).json({ error: 'Gagal menampilkan matakuliah', errorMessage: error.message });
+  }
+}
+
+
+
 module.exports = {
-    addMatakuliah
+    addMatakuliah,
+    DisplayAllMatakuliah
   };

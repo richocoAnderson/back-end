@@ -1,4 +1,4 @@
-const User = require('../controller/adminModel');
+const User = require('../controller/authenticationController');
 
 async function register(req, res) {
   const { email, password, userName } = req.body;
@@ -14,9 +14,9 @@ async function login(req, res){
     try {
       const { email, password } = req.body;
       const result = await User.loginUser(email, password);
-      res.status(200).json({ message: 'Login successful', user: result.user });
+      res.status(200).json(result);
     } catch (error) {
-      res.status(500).json({ message: 'Login failed', error: error.message });
+      res.status(500).json({error: error.message });
     }
   };
   

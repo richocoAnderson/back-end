@@ -33,10 +33,14 @@ class User {
       const user = userCredential.user;
       const userDocRef = doc(firestore, AdminCollection, user.uid);
       const userDoc = await getDoc(userDocRef);
-
+      const token = `TKN-${Math.floor(10000 + Math.random() * 90000)}`;
       if (userDoc.exists()) {
         const userData = userDoc.data();
-        return { user: { uid: user.uid, ...userData } };
+        return { 
+          userName: userData.userName, // Mengambil properti userName dari userData
+          email: userData.email, // Mengambil properti email dari userData
+          token 
+        };
       } else {
         throw new Error('User not found');
       }
@@ -44,6 +48,8 @@ class User {
       throw error;
     }
   }
+  
+  
 }
 
 module.exports = User;
