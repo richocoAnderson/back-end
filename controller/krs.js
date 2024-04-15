@@ -2,11 +2,6 @@ const { doc, setDoc, collection, query, where, getDocs, getDoc, orWhere } = requ
 const { firestore, KrsCollection, MahasiswaCollection, MatkulCollection } = require('../config'); 
 
 
-function hitungRata(totalNilaiIp, jumlahSKS){
-    const ipk = totalNilaiIp/jumlahSKS;
-    return ipk
-}
-
 class KRS{
     static async createKRS({ kodeMk, semesterKRS, nim, nilai, sks }) {
         try {
@@ -61,25 +56,28 @@ class KRS{
             const mahasiswaSnapshot = await getDocs(mahasiswaCollection);
             let hasilIPK = [];
     
-            // Iterasi melalui setiap mahasiswa dengan for...of loop
-            for (const mahasiswaDoc of mahasiswaSnapshot.docs) {
+            // Menunggu semua permintaan data selesai dengan Promise.all()
+            await Promise.all(mahasiswaSnapshot.docs.map(async (mahasiswaDoc) => {
                 const nim = mahasiswaDoc.data().nim;
                 const nama = mahasiswaDoc.data().nama;
-                const jurusan= mahasiswaDoc.data().jurusan;
+                const jurusan = mahasiswaDoc.data().jurusan;
+                const jk = mahasiswaDoc.data().jenisKelamin;
     
                 let totalNilai = 0;
                 let totalSKS = 0;
-                let nilai = 0;
+                let matkulDiambil = [];
     
-                // Ambil KRS mahasiswa dari database
                 const krsCollection = collection(firestore, KrsCollection);
                 const krsQuery = query(krsCollection, where('nim', '==', nim));
                 const krsSnapshot = await getDocs(krsQuery);
     
-                // Iterasi melalui setiap KRS mahasiswa
-                krsSnapshot.forEach((krsDoc) => {
+                await Promise.all(krsSnapshot.docs.map(async (krsDoc) => {
                     const bobotNilai = krsDoc.data().bobot;
                     const sks = krsDoc.data().sks;
+                    const kodeMk = krsDoc.data().kodeMk;
+                    const nilainya = krsDoc.data().nilai;
+    
+                    let nilai = 0;
     
                     if (bobotNilai === "A") {
                         nilai = 4.00;
@@ -98,18 +96,31 @@ class KRS{
                     } else if (bobotNilai === "E") {
                         nilai = 0.00;
                     }
-                    // Hitung total nilai dan total SKS
+    
+                    const matkulCollection = collection(firestore, MatkulCollection);
+                    const matkulQuery = query(matkulCollection, where('kodeMk', '==', kodeMk));
+                    const matkulSnapshot = await getDocs(matkulQuery);
+                    const matkulData = matkulSnapshot.docs[0].data();
+    
+                    const matkul = matkulData.mataKuliah;
+                    const jenisMk = matkulData.jenisMk;
+                    const sksMk = matkulData.sks;
+    
+                    matkulDiambil.push({ kodeMk: kodeMk, matkul: matkul, jenisMk: jenisMk, sksMk: sksMk, nilaBobot: bobotNilai, nilai: nilainya });
+    
                     totalNilai += nilai * sks;
                     totalSKS += sks;
-                });
+                }));
     
-                // Hitung IPK untuk mahasiswa
-                const ipk = totalSKS > 0 ? (totalNilai / totalSKS).toFixed(2) : 0;
+                let ipk;
+                if (Number.isInteger(totalNilai / totalSKS)) {
+                    ipk = parseInt((totalNilai / totalSKS).toFixed(0)); // Mengonversi IPK ke integer
+                } else {
+                    ipk = parseFloat((totalNilai / totalSKS).toFixed(2)); // Mengonversi IPK ke float
+                }
     
-                // Tambahkan data IPK ke dalam array hasilIPK
-                hasilIPK.push({ nim:nim, nama: nama, jurusan: jurusan, ipk: ipk });
-    
-            }
+                hasilIPK.push({ nim: nim, nama: nama, jurusan: jurusan, ipk: ipk, jeniskelamin: jk, totalSks: totalSKS, matkulDiambil: matkulDiambil });
+            }));
     
             return hasilIPK;
         } catch (error) {
@@ -118,83 +129,9 @@ class KRS{
         }
     }
     
-
-    static async getIPKByNIM(nim) {
-      try {
-          const mahasiswaCollection = collection(firestore, MahasiswaCollection);
-          const mahasiswaQuery = query(mahasiswaCollection, where('nim', '==', nim));
-          const mahasiswaSnapshot = await getDocs(mahasiswaQuery);
-  
-          if (mahasiswaSnapshot.empty) {
-              throw new Error('Mahasiswa dengan NIM tersebut tidak ditemukan');
-          }
-  
-          let hasilIPK = [];
-  
-          // Ambil data mahasiswa dari snapshot
-          const mahasiswaDoc = mahasiswaSnapshot.docs[0];
-          const nama = mahasiswaDoc.data().nama;
-          const nimNya= mahasiswaDoc.data().nim;
-          const jurusan= mahasiswaDoc.data().jurusan;
-  
-          let totalNilai = 0;
-          let totalSKS = 0;
-          let nilai = 0;
-  
-          // Ambil KRS mahasiswa dari database berdasarkan NIM
-          const krsCollection = collection(firestore, KrsCollection);
-          const krsQuery = query(krsCollection, where('nim', '==', nim));
-          const krsSnapshot = await getDocs(krsQuery);
-
-          if (krsSnapshot.empty) {
-            throw new Error('Mahasiswa belum melakukan KRS');
-        }
-  
-          // Iterasi melalui setiap KRS mahasiswa
-          krsSnapshot.forEach((krsDoc) => {
-              const bobotNilai = krsDoc.data().bobot;
-              const sks = krsDoc.data().sks;
-  
-              if (bobotNilai === "A") {
-                  nilai = 4.00;
-              } else if (bobotNilai === "B+") {
-                  nilai = 3.50;
-              } else if (bobotNilai === "B") {
-                  nilai = 3.00;
-              } else if (bobotNilai === "C+") {
-                  nilai = 2.50;
-              } else if (bobotNilai === "C") {
-                  nilai = 2.00;
-              } else if (bobotNilai === "D+") {
-                  nilai = 1.50;
-              } else if (bobotNilai === "D") {
-                  nilai = 1.00;
-              } else if (bobotNilai === "E") {
-                  nilai = 0.00;
-              }
-              // Hitung total nilai dan total SKS
-              totalNilai += nilai * sks;
-              totalSKS += sks;
-          });
-  
-          // Hitung IPK untuk mahasiswa
-          const ipk = totalSKS > 0 ? totalNilai / totalSKS : 0;
-  
-          // Tambahkan data IPK ke dalam array hasilIPK
-          hasilIPK.push({ nim:nimNya, nama: nama, jursan: jurusan, ipk: ipk });
-  
-          return hasilIPK ;
-      } catch (error) {
-          console.error('Gagal menghitung IPK:', error.message);
-          throw error;
-      }
-  }
-  
-  
-  
-  
-  
     
+      
+
 }
 
 

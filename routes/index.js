@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const authController = require('../handler/authenticationControllers');
+const authController = require('../handler/authenticationHandler');
 const MahasiswaController = require('../handler/mahasiswaHandler');
 const matakuliahController = require('../handler/matakuliahHandler');
 const krsController = require('../handler/krsHandler');
